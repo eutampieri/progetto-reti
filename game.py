@@ -38,3 +38,6 @@ def get_question(turn, num):
 	is_bad = cache_bad[turn] == num
 	return is_bad, cache[ind]
 
+
+def get_random_mapping(length):
+	return random.shuffle(range(length))
