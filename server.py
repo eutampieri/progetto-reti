@@ -7,7 +7,6 @@ from game import get_question, get_random_mapping
 from ui import get_messages
 import time
 
-
 class Player:
 	def __init__(self, client, address, player_id, name, is_api):
 		self.client = client
@@ -16,6 +15,8 @@ class Player:
 		self.name = name
 		self.score = 0
 		self.is_api = is_api
+		self.to_close = False
+		self.is_ready = False
 
 
 WAITING = 0
@@ -23,11 +24,13 @@ IN_GAME = 1
 OVER = 2
 state = WAITING
 players = []
+num_connected_clients = 0
+num_ready_clients = 0
 
-
-def main_loop():
+def accept_loop():
 	global state
-	num_connected_clients = 0
+	global num_connected_clients
+	global num_ready_clients
 	# handle incoming connections
 	while state == WAITING:
 		client, client_address = SERVER.accept()
@@ -42,8 +45,6 @@ def main_loop():
 			for i in players:
 				if i.name == name:
 					bad_name = True
-					client.send(
-						bytes("This name is already in use, please select another name\n", "utf8"))
 					break
 		# send welcome message
 		client.send(bytes("You joined the game with name %s\n" % name, "utf8"))
@@ -63,9 +64,16 @@ def main_loop():
 
 		# diamo inizio all'attività del Thread - uno per ciascun client
 		Thread(target=handle_client, args=(client_id,)).start()
-
 		num_connected_clients += 1
-		if num_connected_clients >= 2:
+
+def main_loop():	
+	global state
+	global num_connected_clients
+	global num_ready_clients
+	
+	while state == WAITING:
+		time.sleep(1)
+		if num_ready_clients*2 > num_connected_clients:
 			state = IN_GAME
 
 	# Game loop
@@ -74,56 +82,110 @@ def main_loop():
 	state = OVER
 	print(players)
 
+def close_client(client_id):
+	global num_connected_clients
+	players[client_id].to_close = True
+	num_connected_clients -= 1
+	try:
+		players[client_id].client.close()
+	except:
+		return
+	
+def get_response(client_id):
+	global num_ready_clients
+	
+	client = players[client_id].client
+	msgs = get_messages(players[client_id].is_api)
+	
+	while True:
+		try:
+			ans = client.recv(BUFSIZ).decode("utf8").strip().split()
+		except:
+			close_client(client_id)
+			break
+			
+
+		if len(ans) == 0:
+			continue
+		
+		elif len(ans) == 2 and ans[0] == "setname":
+			name = ans[1]
+			bad_name = False
+			for i in players:
+				if i.name == name:
+					bad_name = True
+					client.send(bytes(msgs["message"]("This name is already in use, please select another name"), "utf8"))
+					break
+			if not bad_name:
+				players[client_id].name = name
+				client.send(bytes(msgs["message"]("You changed name to %s" % name), "utf8"))
+
+
+		elif len(ans) == 1 and ans[0] == "quit":
+			client.send(bytes(msgs["quit"]("You quit the game"), "utf-8"))
+			close_client(client_id)
+			break
+
+		elif len(ans) == 1 and ans[0].isdigit():
+			res = int(ans[0])
+			if res == 0 or res == 1 or res == 2:
+				return res
+		else:
+			client.send(bytes(msgs["message"]("Unknown command"), "utf8"))
+	
 
 """Handle a single client connection."""
 # prende il socket del client come argomento della funzione.
 def handle_client(client_id):
 	global state
+	global num_ready_clients
+
 	client = players[client_id].client
 	name = players[client_id].name
 
 	msgs = get_messages(players[client_id].is_api)
 
-	client.send(bytes(msgs["message"]("Waiting for game to start..."), "utf8"))
 	while state == WAITING:
-		time.sleep(1)
+		if players[client_id].is_ready:
+			client.send(bytes(msgs["message"]("Waiting for game to start..."), "utf8"))
+			time.sleep(1)
+		else:
+			client.settimeout(4)
+			try:
+				client.send(bytes(msgs["message"]("type 'ready' to ready up!"), "utf8"))
+				msg = client.recv(BUFSIZ).decode("utf-8")
+				if msg.strip() == "ready":
+					players[client_id].is_ready = True
+					num_ready_clients += 1
+					client.send(bytes(msgs["message"]("Readyd up"), "utf8"))
+			except:
+				pass
+			client.settimeout(None)
 
 	client.send(bytes(msgs["message"]("Game started!"), "utf8"))
 	turn = 0
 	while state == IN_GAME:
-		ans = 0
-		while True:
-			mapping = get_random_mapping(3)
-			print(mapping)
-			client.send(bytes(msgs["choose"](
-				("Choose a question:", [(str(i), "Question " + chr(ord('A') + i)) for i in range(3)])), "utf8"))
-			ans = client.recv(BUFSIZ).decode("utf8").strip()
-			if ans == "0" or ans == "1" or ans == "2":
-				ans = mapping[int(ans)]
-				break
+		client.send(bytes(msgs["choose"](("Choose a question:", [(str(i), "Question " + chr(ord('A') + i)) for i in range(3)])), "utf8"))
+		ans = get_response(client_id)
+		if players[client_id].to_close:
+			break
 		is_bad, question = get_question(turn, ans)
 		if is_bad:
-			client.send(
-				bytes(msgs["quit"]("Your choice was the trap, you lost!\n"), "utf-8"))
-			client.close()
+			client.send(bytes(msgs["quit"]("Your choice was the trap, you lost!"), "utf-8"))
+			close_client(client_id)
 			break
 
 		client.send(bytes(msgs["choose"](
 			(question[0], [(str(i[0]), i[1]) for i in enumerate(question[1])])), "utf-8"))
 
-		ans = 0
-		while True:
-			ans = client.recv(BUFSIZ).decode("utf8").strip()
-			if ans == "0" or ans == "1" or ans == "2":
-				ans = int(ans)
-				break
+		ans = get_response(client_id)
+		if players[client_id].to_close:
+			break
 		if ans == question[2]:
-			client.send(
-				bytes(msgs["message"]("Your answer was correct! You get a point"), "utf-8"))
+			client.send(bytes(msgs["message"]("Your answer was correct! You get a point"), "utf-8"))
 			players[client_id].score += 1
 		else:
-			client.send(
-				bytes(msgs["message"]("Your answer was wrong! You lose a point"), "utf-8"))
+			client.send(bytes(msgs["message"]("Your answer was wrong! You lose a point"), "utf-8"))
 			players[client_id].score -= 1
 		turn += 1
 
@@ -146,7 +208,9 @@ SERVER.bind(ADDR)
 if __name__ == "__main__":
 	SERVER.listen(5)
 	print("In attesa di connessioni...")
-	ACCEPT_THREAD = Thread(target=main_loop)
+	ACCEPT_THREAD = Thread(target=accept_loop)
+	MAIN_THREAD = Thread(target=main_loop)
 	ACCEPT_THREAD.start()
-	ACCEPT_THREAD.join()
+	MAIN_THREAD.start()
+	MAIN_THREAD.join()
 	SERVER.close()
