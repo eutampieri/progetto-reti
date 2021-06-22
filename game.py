@@ -25,12 +25,16 @@ def get_random_question():
 	return question, answers, correct_answer, rationale
 
 cache = []
+cache_bad = []
 def get_question(turn, num):
 	assert isinstance(turn,int) and isinstance(num,int), "inputs should be int"
-	assert num==0 or num==1, "num should be either 0 or 1"
+	assert num==0 or num==1 or num==2, "num should be either 0, 1 or 2"
 	assert turn>=0, "turn should be >=0"
-	ind = turn*2+num
+	ind = turn*3+num
 	while ind>=len(cache):
 		cache.append(get_random_question())
-	return cache[ind]
+	while turn>=len(cache_bad):
+		cache_bad.append(random.randint(0,2))
+	is_bad = cache_bad[turn] == num
+	return is_bad, cache[ind]
 
