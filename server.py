@@ -6,11 +6,20 @@ from threading import Thread
 from game import get_question
 import time
 
+class Player:
+	def __init__(self, client, address, player_id, name, is_api):
+		self.client = client
+		self.address = address
+		self.player_id = player_id
+		self.name = name
+		self.score = 0
+		self.is_api = is_api
+
 WAITING = 0
 IN_GAME = 1
 OVER = 2
 state = WAITING
-clients = [] # (client, address, id, name, score, is_json)
+players = []
 
 def main_loop():
 	global state
@@ -26,8 +35,8 @@ def main_loop():
 		while bad_name:
 			name = name+"_"
 			bad_name = False
-			for i in clients:
-				if i[3] == name:
+			for i in players:
+				if i.name == name:
 					bad_name = True
 					client.send(bytes("This name is already in use, please select another name\n", "utf8"))
 					break
@@ -45,7 +54,7 @@ def main_loop():
 			pass
 		client.settimeout(None)
 
-		clients.append((client, client_address, client_id, name, 0, api))
+		players.append(Player(client, client_address, client_id, name, api))
 
 		# diamo inizio all'attività del Thread - uno per ciascun client
 		Thread(target=handle_client, args=(client_id,)).start()
@@ -58,12 +67,13 @@ def main_loop():
 	print("Entering game")
 	time.sleep(60)
 	state = OVER
+	print(players)
 
 """Handle a single client connection."""
 def handle_client(client_id):  # prende il socket del client come argomento della funzione.
 	global state
-	client = clients[client_id][0]
-	name = clients[client_id][3]
+	client = players[client_id].client
+	name = players[client_id].name
 	
 	client.send(bytes("Waiting for game to start...\n","utf8"))
 	while state == WAITING:
@@ -96,29 +106,17 @@ def handle_client(client_id):  # prende il socket del client come argomento dell
 				ans = int(ans)
 				break
 		if ans == question[2]:
-			client.send(bytes("correct!\n","utf-8"))
-
-
-# si mette in ascolto del thread del singolo client e ne gestisce l'invio dei messaggi o l'uscita dalla Chat
-"""
-	while True:
-		msg = client.recv(BUFSIZ)
-		if msg != bytes("{quit}", "utf8"):
-			broadcast(msg, nome+": ")
+			client.send(bytes("Your answer was correct! You get a point\n","utf-8"))
+			players[client_id].score += 1
 		else:
-			client.send(bytes("{quit}", "utf8"))
-			client.close()
-			del clients[client]
-			broadcast(bytes("%s left the game." % nome, "utf8"))
-			break
-"""
+			client.send(bytes("Your answer was wrong! You lose a point\n","utf-8"))
+			players[client_id].score -= 1
+		turn += 1
 
 """ Send a broadcast message."""
 def broadcast(msg, prefix=""):	# il prefisso è usato per l'identificazione del nome.
 	for utente in clients:
 		utente.send(bytes(prefix, "utf8")+msg)
-
-	
 
 HOST = 'localhost'
 PORT = 53000
