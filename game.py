@@ -40,4 +40,4 @@ def get_question(turn, num):
 
 
 def get_random_mapping(length):
-	return random.shuffle(range(length))
+	return random.sample(range(length), length)

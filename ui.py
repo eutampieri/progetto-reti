@@ -14,5 +14,5 @@ def get_messages(is_api):
         return {
             "message": lambda x: x + "\n",
             "quit": lambda x: "Bye bye! " + x + "\n",
-            "choose": lambda x: x[0] + "\n" + "\n".join([item[1] + ":\t" + item[0] for item in x[1]]) + "\n",
+            "choose": lambda x: x[0] + "\n" + "\n".join([item[0] + ":\t" + item[1] for item in x[1]]) + "\n",
         }
