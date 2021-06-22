@@ -10,7 +10,7 @@ WAITING = 0
 IN_GAME = 1
 OVER = 2
 state = WAITING
-clients = [] # (client, address, id, name, score)
+clients = [] # (client, address, id, name, score, is_json)
 
 def main_loop():
 	global state
@@ -34,7 +34,18 @@ def main_loop():
 		# send welcome message
 		client.send(bytes("You joined the game with name %s\n" % name, "utf8"))
 
-		clients.append((client, client_address, client_id, name, 0))
+		#check if API
+		api = False
+		client.settimeout(1)
+		try:
+			msg = client.recv(BUFSIZ).decode("utf-8")
+			if msg.strip() == "api":
+				api = True
+		except:
+			pass
+		client.settimeout(None)
+
+		clients.append((client, client_address, client_id, name, 0, api))
 
 		# diamo inizio all'attività del Thread - uno per ciascun client
 		Thread(target=handle_client, args=(client_id,)).start()
@@ -103,11 +114,11 @@ def handle_client(client_id):  # prende il socket del client come argomento dell
 """
 
 """ Send a broadcast message."""
-def broadcast(msg, prefix=""):  # il prefisso è usato per l'identificazione del nome.
+def broadcast(msg, prefix=""):	# il prefisso è usato per l'identificazione del nome.
 	for utente in clients:
 		utente.send(bytes(prefix, "utf8")+msg)
 
-        
+	
 
 HOST = 'localhost'
 PORT = 53000
