@@ -47,7 +47,10 @@ def accept_loop():
 	global num_ready_clients
 	# handle incoming connections
 	while state == WAITING:
-		client, client_address = SERVER.accept()
+		try:
+			client, client_address = SERVER.accept()
+		except ConnectionAbortedError:
+			break
 		print("[_] New client (%s:%s)" % client_address)
 
 		client_id = num_connected_clients
