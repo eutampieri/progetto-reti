@@ -28,7 +28,7 @@ note that your score can become negative.
 
 """
 
-HOST = '::'
+HOST = '0.0.0.0'
 PORT = 53000
 BUFSIZ = 1024
 ADDR = (HOST, PORT)
