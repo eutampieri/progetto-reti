@@ -62,11 +62,13 @@ class Player:
 		try:
 			self.client.send(bytes(msg, "utf8"))
 		except:
-			self.close()
-	def close(self):
+			self.close("Some communication error occurred")
+	def close(self, msg):
 		global num_connected_clients
 		if not self.to_close:
-			self.msg(get_messages(self.is_api)["scoreboard"]((players, self)))
+			msgs = get_messages(self.is_api)
+			self.msg(msgs["scoreboard"]((players, self)))
+			self.msg(msgs["quit"](msg))
 			num_connected_clients -= 1
 			self.to_close = True
 		try:
@@ -146,7 +148,7 @@ def get_response(player):
 		try:
 			ans = player.client.recv(BUFSIZ).decode("utf8").strip().split()
 		except:
-			player.close()
+			player.close("Some communication error occurred")
 			break
 
 
@@ -162,12 +164,11 @@ def get_response(player):
 					player.msg(msgs["message"]("This name is already in use, please select another name"))
 					break
 			if not bad_name:
-				players[client_id].name = name
+				player.name = name
 				player.msg(msgs["message"]("You changed name to %s" % name))
 
 		elif len(ans) == 1 and ans[0] == "quit":
-			player.msg(msgs["quit"]("You quit the game"))
-			player.close()
+			player.close("You quit the game")
 			break
 
 		elif len(ans) == 1 and ans[0].isdigit():
@@ -218,8 +219,7 @@ def handle_client(player):
 			break
 		is_bad, question = get_question(turn, ans)
 		if is_bad:
-			player.msg(msgs["quit"]("Your choice was the trap, you lost!"))
-			player.close()
+			player.close("Your choice was the trap, you lost!")
 			break
 
 		player.msg(msgs["choose"]((question[0], [(str(i[0]), i[1]) for i in enumerate(question[1])])))
@@ -234,7 +234,7 @@ def handle_client(player):
 			player.msg(msgs["message"]("Your answer was wrong! You lose a point"))
 			player.score -= 1
 		turn += 1
-	player.close()
+	player.close("The game is over")
 
 """ Send a broadcast message."""
 # il prefisso è usato per l'identificazione del nome.
@@ -249,7 +249,7 @@ def signal_handler(signal, frame):
 	print("exiting")
 	state = OVER
 	for i in players:
-		i.close()
+		i.close("The session was terminated by the server")
 	SERVER.close()
 	sys.exit(0)
 
@@ -273,5 +273,5 @@ if __name__ == "__main__":
 
 	state = OVER
 	for i in players:
-		i.close()
+		i.close("The game is over")
 	SERVER.close()
