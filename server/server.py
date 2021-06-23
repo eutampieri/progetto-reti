@@ -84,8 +84,9 @@ def main_loop():
 
 def close_client(client_id):
 	global num_connected_clients
-	players[client_id].to_close = True
-	num_connected_clients -= 1
+	if not players[client_id].to_close:
+		num_connected_clients -= 1
+		players[client_id].to_close = True
 	try:
 		players[client_id].client.close()
 	except:
