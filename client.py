@@ -7,51 +7,68 @@ from json import loads
 from tkinter import messagebox
 
 """La funzione che segue ha il compito di gestire la ricezione dei messaggi."""
+
+
 def receive():
     while True:
         try:
-            #quando viene chiamata la funzione receive, si mette in ascolto dei messaggi che
-            #arrivano sul socket
+            # quando viene chiamata la funzione receive, si mette in ascolto dei messaggi che
+            # arrivano sul socket
             try:
                 msg = loads(client_socket.recv(BUFSIZ).decode("utf8"))
                 print(msg)
             except:
                 continue
             if msg["action"] == "send_message":
-                tkt.messagebox.showinfo(title="CoolNetGame", message=msg["message"])
+                tkt.messagebox.showinfo(
+                    title="CoolNetGame", message=msg["message"])
+            elif msg["action"] == "scoreboard":
+                for i, x in enumerate(msg["board"]):
+                    if x["is_me"]:
+                        tkt.messagebox.showinfo(title="CoolNetGame Scoreboard", "You're "+str(x["score"] + "th!"))
             elif msg["action"] == "choose":
                 question.configure(text=msg["message"])
                 ans0["text"] = msg["options"][0][1]
                 ans1["text"] = msg["options"][1][1]
                 ans2["text"] = msg["options"][2][1]
             elif msg["action"] == "quit":
-                tkt.messagebox.showerror("The game will now close", message=msg["reason"])
+                tkt.messagebox.showerror(
+                    "The game will now close", message=msg["reason"])
                 on_closing()
             else:
                 print(msg)
-        except OSError:  
+        except OSError:
             break
 
+
 """La funzione che segue viene invocata quando viene chiusa la finestra della chat."""
+
+
 def on_closing(event=None):
     client_socket.close()
     finestra.destroy()
-    
+
+
 def send(msg):
     client_socket.send(bytes(msg, "utf8"))
+
 
 def send0(event=None):
     send("0")
 
+
 def send1(event=None):
     send("1")
+
 
 def send2(event=None):
     send("2")
 
+
 def send_ready(event=None):
     send("ready")
     ready["state"] = "disable"
+
 
 finestra = tkt.Tk()
 finestra.title("Chat_Laboratorio")
@@ -72,7 +89,7 @@ ready.pack()
 
 finestra.protocol("WM_DELETE_WINDOW", on_closing)
 
-#----Connessione al Server----
+# ----Connessione al Server----
 HOST = input('Inserire il Server host: ')
 PORT = input('Inserire la porta del server host: ')
 if not PORT:
