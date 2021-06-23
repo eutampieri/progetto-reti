@@ -47,6 +47,7 @@ class Player:
 	def close(self):
 		global num_connected_clients
 		if not self.to_close:
+			self.msg(get_messages(self.is_api)["scoreboard"]((players, self)))
 			num_connected_clients -= 1
 			self.to_close = True
 		try:
@@ -81,7 +82,7 @@ def accept_loop():
 
 		# check if API
 		api = False
-		client.settimeout(1)
+		client.settimeout(0.5)
 		try:
 			msg = client.recv(BUFSIZ).decode("utf-8")
 			if msg.strip() == "api":
@@ -211,6 +212,7 @@ def handle_client(player):
 			player.msg(msgs["message"]("Your answer was wrong! You lose a point"))
 			player.score -= 1
 		turn += 1
+	player.close()
 
 """ Send a broadcast message."""
 # il prefisso è usato per l'identificazione del nome.
