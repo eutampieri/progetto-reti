@@ -24,9 +24,9 @@ fn main() {
             let mut recv_conn = conn.try_clone().unwrap();
 
             let client = request.accept().unwrap();
-            let (mut receiver, mut sender) = client.split().unwrap();
-            let mut sender_arc = std::sync::Arc::new(sender);
-            let mut recv_sender_arc = sender_arc.clone();
+            let (mut receiver, sender) = client.split().unwrap();
+            let sender_arc = std::sync::Arc::new(std::sync::Mutex::new(sender));
+            let recv_sender_arc = sender_arc.clone();
 
             std::thread::spawn(move || {
                 let mut buf = [0u8; 1000];
@@ -34,32 +34,32 @@ fn main() {
                 loop {
                     if let Ok(n) = recv_conn.read(&mut buf) {
                         if n > 0 {
-                            let recieved = Vec::from(&buf[0..n]);
-                            let msg = OwnedMessage::Binary(recieved);
-                            recv_sender_arc.borrow_mut().send_message(&msg).unwrap();
+                            let recieved = String::from_utf8_lossy(&buf[0..n]);
+                            let msg = OwnedMessage::Text(recieved.to_string());
+                            recv_sender_arc.lock().unwrap().send_message(&msg).unwrap();
                         }
                     }
                 }
             });
 
             for message in receiver.incoming_messages().filter(|x| x.is_ok()) {
-                let message = dbg!(message).unwrap();
+                let message = message.unwrap();
 
                 match message {
                     OwnedMessage::Close(_) => {
                         let message = OwnedMessage::Close(None);
-                        sender_arc.send_message(&message).unwrap();
+                        sender_arc.lock().unwrap().send_message(&message).unwrap();
                         println!("Client {} disconnected", 0);
                         return;
                     }
                     OwnedMessage::Ping(ping) => {
                         let message = OwnedMessage::Pong(ping);
-                        sender_arc.send_message(&message).unwrap();
+                        sender_arc.lock().unwrap().send_message(&message).unwrap();
                     }
                     OwnedMessage::Text(txt) => conn
                         .write_all(txt.as_bytes())
                         .expect("Couldn't write to raw TCP"),
-                    _ => sender_arc.send_message(&message).unwrap(),
+                    _ => sender_arc.lock().unwrap().send_message(&message).unwrap(),
                 }
             }
         });
