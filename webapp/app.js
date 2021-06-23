@@ -15,13 +15,17 @@ function run(ws) {
                     alert(message.message);
                     break;
                 case "choose":
+                    document.getElementById("choose_view").classList.remove("d-none");
                     document.getElementById("choose_title").innerHTML = message.message;
                     var choices = document.getElementById("choices");
                     choices.innerHTML = "";
                     for (var i = 0; i < message.options.length; i++) {
                         var el = document.createElement("button");
+                        el.type = "button";
+                        el.className = "d-block btn btn-primary";
+                        var toSend = message.options[i][0];
                         el.onclick = function () {
-                            ws.send(message.options[i][0]);
+                            ws.send(toSend);
                         };
                         el.innerHTML = message.options[i][1];
                         choices.appendChild(el);
