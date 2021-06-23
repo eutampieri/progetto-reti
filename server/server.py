@@ -9,6 +9,26 @@ import time
 import signal
 import sys
 
+HOST = 'localhost'
+PORT = 53000
+BUFSIZ = 1024
+ADDR = (HOST, PORT)
+
+SERVER = socket(AF_INET, SOCK_STREAM)
+SERVER.bind(ADDR)
+
+GAME_DURATION = 60
+WAITING = 0
+IN_GAME = 1
+OVER = 2
+
+state = WAITING
+players = []
+num_connected_clients = 0
+num_ready_clients = 0
+
+all_threads = []
+
 class Player:
 	def __init__(self, client, address, player_id, name, is_api):
 		self.client = client
@@ -34,23 +54,6 @@ class Player:
 		except:
 			return
 
-HOST = 'localhost'
-PORT = 53000
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
-
-SERVER = socket(AF_INET, SOCK_STREAM)
-SERVER.bind(ADDR)
-
-WAITING = 0
-IN_GAME = 1
-OVER = 2
-state = WAITING
-players = []
-num_connected_clients = 0
-num_ready_clients = 0
-
-all_threads = []
 
 def accept_loop():
 	global state
@@ -85,7 +88,7 @@ def accept_loop():
 				api = True
 		except:
 			pass
-		client.settimeout(None)
+		client.settimeout(GAME_DURATION)
 		
 		player = Player(client, client_address, client_id, name, api)
 		players.append(player)
@@ -109,7 +112,7 @@ def main_loop():
 
 	# Game loop
 	print("Entering game")
-	time.sleep(60)
+	time.sleep(GAME_DURATION)
 	state = OVER
 	print(players)
 
@@ -181,7 +184,7 @@ def handle_client(player):
 					player.msg(msgs["message"]("Readyd up"))
 			except:
 				pass
-			player.client.settimeout(None)
+			player.client.settimeout(GAME_DURATION)
 
 	player.msg(msgs["message"]("Game started!"))
 	turn = 0
