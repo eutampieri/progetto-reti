@@ -17,6 +17,20 @@ class Player:
 		self.is_api = is_api
 		self.to_close = False
 		self.is_ready = False
+	def msg(self, msg):
+		try:
+			self.client.send(bytes(msg, "utf8"))
+		except:
+			self.close()
+	def close(self):
+		global num_connected_clients
+		if not self.to_close:
+			num_connected_clients -= 1
+			self.to_close = True
+		try:
+			self.client.close()
+		except:
+			return
 
 
 WAITING = 0
@@ -46,8 +60,6 @@ def accept_loop():
 				if i.name == name:
 					bad_name = True
 					break
-		# send welcome message
-		client.send(bytes("You joined the game with name %s\n" % name, "utf8"))
 
 		# check if API
 		api = False
@@ -59,11 +71,12 @@ def accept_loop():
 		except:
 			pass
 		client.settimeout(None)
-
-		players.append(Player(client, client_address, client_id, name, api))
+		
+		player = Player(client, client_address, client_id, name, api)
+		players.append(player)
 
 		# diamo inizio all'attività del Thread - uno per ciascun client
-		Thread(target=handle_client, args=(client_id,)).start()
+		Thread(target=handle_client, args=(player,)).start()
 		num_connected_clients += 1
 
 def main_loop():	
@@ -82,27 +95,17 @@ def main_loop():
 	state = OVER
 	print(players)
 
-def close_client(client_id):
-	global num_connected_clients
-	if not players[client_id].to_close:
-		num_connected_clients -= 1
-		players[client_id].to_close = True
-	try:
-		players[client_id].client.close()
-	except:
-		return
 	
-def get_response(client_id):
+def get_response(player):
 	global num_ready_clients
 	
-	client = players[client_id].client
-	msgs = get_messages(players[client_id].is_api)
+	msgs = get_messages(player.is_api)
 	
 	while True:
 		try:
-			ans = client.recv(BUFSIZ).decode("utf8").strip().split()
+			ans = player.client.recv(BUFSIZ).decode("utf8").strip().split()
 		except:
-			close_client(client_id)
+			player.close()
 			break
 			
 
@@ -115,16 +118,15 @@ def get_response(client_id):
 			for i in players:
 				if i.name == name:
 					bad_name = True
-					client.send(bytes(msgs["message"]("This name is already in use, please select another name"), "utf8"))
+					player.msg(msgs["message"]("This name is already in use, please select another name"))
 					break
 			if not bad_name:
 				players[client_id].name = name
-				client.send(bytes(msgs["message"]("You changed name to %s" % name), "utf8"))
-
+				player.msg(msgs["message"]("You changed name to %s" % name))
 
 		elif len(ans) == 1 and ans[0] == "quit":
-			client.send(bytes(msgs["quit"]("You quit the game"), "utf-8"))
-			close_client(client_id)
+			player.msg(msgs["quit"]("You quit the game"))
+			player.close()
 			break
 
 		elif len(ans) == 1 and ans[0].isdigit():
@@ -132,70 +134,69 @@ def get_response(client_id):
 			if res == 0 or res == 1 or res == 2:
 				return res
 		else:
-			client.send(bytes(msgs["message"]("Unknown command"), "utf8"))
+			player.msg(msgs["message"]("Unknown command"))
 	
 
 """Handle a single client connection."""
 # prende il socket del client come argomento della funzione.
-def handle_client(client_id):
+def handle_client(player):
 	global state
 	global num_ready_clients
+		
+	# send welcome message
+	player.msg("You joined the game with name %s\n" % player.name)
 
-	client = players[client_id].client
-	name = players[client_id].name
-
-	msgs = get_messages(players[client_id].is_api)
+	msgs = get_messages(player.is_api)
 
 	while state == WAITING:
-		if players[client_id].is_ready:
-			client.send(bytes(msgs["message"]("Waiting for game to start..."), "utf8"))
-			time.sleep(1)
+		if player.is_ready:
+			player.msg(msgs["message"]("Waiting for game to start..."))
+			time.sleep(2)
 		else:
-			client.settimeout(4)
+			player.client.settimeout(4)
 			try:
-				client.send(bytes(msgs["message"]("type 'ready' to ready up!"), "utf8"))
-				msg = client.recv(BUFSIZ).decode("utf-8")
+				player.msg(msgs["message"]("type 'ready' to ready up!"))
+				msg = player.client.recv(BUFSIZ).decode("utf-8")
 				if msg.strip() == "ready":
-					players[client_id].is_ready = True
+					player.is_ready = True
 					num_ready_clients += 1
-					client.send(bytes(msgs["message"]("Readyd up"), "utf8"))
+					player.msg(msgs["message"]("Readyd up"))
 			except:
 				pass
-			client.settimeout(None)
+			player.client.settimeout(None)
 
-	client.send(bytes(msgs["message"]("Game started!"), "utf8"))
+	player.msg(msgs["message"]("Game started!"))
 	turn = 0
 	while state == IN_GAME:
-		client.send(bytes(msgs["choose"](("Choose a question:", [(str(i), "Question " + chr(ord('A') + i)) for i in range(3)])), "utf8"))
-		ans = get_response(client_id)
-		if players[client_id].to_close:
+		player.msg(msgs["choose"](("Choose a question:", [(str(i), "Question " + chr(ord('A') + i)) for i in range(3)])))
+		ans = get_response(player)
+		if player.to_close:
 			break
 		is_bad, question = get_question(turn, ans)
 		if is_bad:
-			client.send(bytes(msgs["quit"]("Your choice was the trap, you lost!"), "utf-8"))
-			close_client(client_id)
+			player.msg(msgs["quit"]("Your choice was the trap, you lost!"))
+			player.close()
 			break
 
-		client.send(bytes(msgs["choose"](
-			(question[0], [(str(i[0]), i[1]) for i in enumerate(question[1])])), "utf-8"))
+		player.msg(msgs["choose"]((question[0], [(str(i[0]), i[1]) for i in enumerate(question[1])])))
 
-		ans = get_response(client_id)
-		if players[client_id].to_close:
+		ans = get_response(player)
+		if player.to_close:
 			break
 		if ans == question[2]:
-			client.send(bytes(msgs["message"]("Your answer was correct! You get a point"), "utf-8"))
-			players[client_id].score += 1
+			player.msg(msgs["message"]("Your answer was correct! You get a point"))
+			player.score += 1
 		else:
-			client.send(bytes(msgs["message"]("Your answer was wrong! You lose a point"), "utf-8"))
-			players[client_id].score -= 1
+			player.msg(msgs["message"]("Your answer was wrong! You lose a point"))
+			player.score -= 1
 		turn += 1
 
 """ Send a broadcast message."""
 # il prefisso è usato per l'identificazione del nome.
-def broadcast(msg, prefix=""):
+def broadcast(msg):
 	global players
 	for utente in players:
-		utente.send(bytes(prefix, "utf8")+msg)
+		utente.msg(msg)
 
 
 HOST = 'localhost'
@@ -218,5 +219,7 @@ if __name__ == "__main__":
 	except KeyboardInterrupt:
 		pass
 	finally:
-		#TODO @MyK00l close all clients
+		state = OVER
+		for i in players:
+			i.close()
 		SERVER.close()
