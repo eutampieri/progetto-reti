@@ -195,12 +195,12 @@ def handle_client(player):
 
 	while state == WAITING:
 		if player.is_ready:
-			player.msg(msgs["message"]("Waiting for game to start..."))
+			player.msg(msgs["message"]("Waiting for game to start ({}/{} players ready)".format(num_ready_clients, num_connected_clients)))
 			time.sleep(2)
 		else:
 			player.client.settimeout(4)
 			try:
-				player.msg(msgs["message"]("type 'ready' to ready up!"))
+				player.msg(msgs["message"]("type 'ready' to ready up! ({}/{} players ready)".format(num_ready_clients, num_connected_clients)))
 				msg = player.client.recv(BUFSIZ).decode("utf-8")
 				if msg.strip() == "ready":
 					player.is_ready = True
