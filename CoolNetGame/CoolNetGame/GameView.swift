@@ -7,9 +7,19 @@
 
 import SwiftUI
 
+struct Choice {
+    var label: String
+    var id: String
+}
+
 struct GameView: View {
+    @State private var question: String = ""
+    private var options: [Choice] = []
     var body: some View {
-        Text(/*@START_MENU_TOKEN@*/"Hello, World!"/*@END_MENU_TOKEN@*/)
+        VStack {
+            Text(question)
+
+        }
     }
 }
 

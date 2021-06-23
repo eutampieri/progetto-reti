@@ -11,7 +11,7 @@ import SwiftUI
 struct CoolNetGameApp: App {
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            SetupView()
         }
     }
 }
