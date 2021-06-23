@@ -72,7 +72,7 @@ def send_ready(event=None):
 
 
 finestra = tkt.Tk()
-finestra.title("Chat_Laboratorio")
+finestra.title("CoolNetGame")
 
 question = tkt.Label(finestra)
 
