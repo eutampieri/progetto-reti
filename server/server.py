@@ -65,6 +65,7 @@ class Player:
 			self.close()
 	def close(self):
 		global num_connected_clients
+		time.sleep(1)
 		if not self.to_close:
 			self.msg(get_messages(self.is_api)["scoreboard"]((players, self)))
 			num_connected_clients -= 1
