@@ -9,6 +9,25 @@ import time
 import signal
 import sys
 
+USAGE = """
+While waiting for a game to start, you can type 'ready' to ready up.
+When more than half of the connected players is ready, the game starts.
+To answer to the questions type either '0', '1' or '2'.
+To change username, type 'setname <new_username>' note that no spaces are allowed in usernames.
+To quit the game, type 'quit'.
+
+The game will last for 60s, during which you should try to answer to as many questions correctly.
+
+Before every question you will be asked to pick a number between 0 and 2,
+if you pick the wrong one, the game will end for you.
+
+Every question has 3 possible answers,
+if you pick the correct one you will be awarded +1 points,
+if you pick the wrong one you will be awarded -1 points,
+note that your score can become negative.
+
+"""
+
 HOST = 'localhost'
 PORT = 53000
 BUFSIZ = 1024
@@ -90,7 +109,7 @@ def accept_loop():
 		except:
 			pass
 		client.settimeout(GAME_DURATION)
-		
+
 		player = Player(client, client_address, client_id, name, api)
 		players.append(player)
 
@@ -101,11 +120,11 @@ def accept_loop():
 		t.start()
 		num_connected_clients += 1
 
-def main_loop():	
+def main_loop():
 	global state
 	global num_connected_clients
 	global num_ready_clients
-	
+
 	while state == WAITING:
 		time.sleep(1)
 		if num_ready_clients*2 > num_connected_clients:
@@ -117,23 +136,23 @@ def main_loop():
 	state = OVER
 	print(players)
 
-	
+
 def get_response(player):
 	global num_ready_clients
-	
+
 	msgs = get_messages(player.is_api)
-	
+
 	while True:
 		try:
 			ans = player.client.recv(BUFSIZ).decode("utf8").strip().split()
 		except:
 			player.close()
 			break
-			
+
 
 		if len(ans) == 0:
 			continue
-		
+
 		elif len(ans) == 2 and ans[0] == "setname":
 			name = ans[1]
 			bad_name = False
@@ -157,14 +176,17 @@ def get_response(player):
 				return res
 		else:
 			player.msg(msgs["message"]("Unknown command"))
-	
+
 
 """Handle a single client connection."""
 # prende il socket del client come argomento della funzione.
 def handle_client(player):
 	global state
 	global num_ready_clients
-		
+
+	# send usage guide
+	player.msg(USAGE)
+
 	# send welcome message
 	player.msg("You joined the game with name %s\n" % player.name)
 
@@ -233,7 +255,7 @@ def signal_handler(signal, frame):
 
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, signal_handler)
-	
+
 	SERVER.listen(5)
 	print("In attesa di connessioni...")
 	ACCEPT_THREAD = Thread(target=accept_loop)
@@ -245,7 +267,7 @@ if __name__ == "__main__":
 
 	ACCEPT_THREAD.start()
 	MAIN_THREAD.start()
-	
+
 	for t in all_threads:
 		t.join()
 
