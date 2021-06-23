@@ -212,5 +212,10 @@ if __name__ == "__main__":
 	MAIN_THREAD = Thread(target=main_loop)
 	ACCEPT_THREAD.start()
 	MAIN_THREAD.start()
-	MAIN_THREAD.join()
-	SERVER.close()
+	try:
+		MAIN_THREAD.join()
+	except KeyboardInterrupt:
+		pass
+	finally:
+		#TODO @MyK00l close all clients
+		SERVER.close()
