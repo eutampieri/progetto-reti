@@ -6,6 +6,8 @@ from threading import Thread
 from game import get_question, get_random_mapping
 from ui import get_messages
 import time
+import signal
+import sys
 
 class Player:
 	def __init__(self, client, address, player_id, name, is_api):
@@ -32,6 +34,13 @@ class Player:
 		except:
 			return
 
+HOST = 'localhost'
+PORT = 53000
+BUFSIZ = 1024
+ADDR = (HOST, PORT)
+
+SERVER = socket(AF_INET, SOCK_STREAM)
+SERVER.bind(ADDR)
 
 WAITING = 0
 IN_GAME = 1
@@ -41,10 +50,13 @@ players = []
 num_connected_clients = 0
 num_ready_clients = 0
 
+all_threads = []
+
 def accept_loop():
 	global state
 	global num_connected_clients
 	global num_ready_clients
+	global all_threads
 	# handle incoming connections
 	while state == WAITING:
 		try:
@@ -79,7 +91,10 @@ def accept_loop():
 		players.append(player)
 
 		# diamo inizio all'attività del Thread - uno per ciascun client
-		Thread(target=handle_client, args=(player,)).start()
+		t = Thread(target=handle_client, args=(player,))
+		t.daemon = True
+		all_threads.append(t)
+		t.start()
 		num_connected_clients += 1
 
 def main_loop():	
@@ -202,27 +217,34 @@ def broadcast(msg):
 		utente.msg(msg)
 
 
-HOST = 'localhost'
-PORT = 53000
-BUFSIZ = 1024
-ADDR = (HOST, PORT)
 
-SERVER = socket(AF_INET, SOCK_STREAM)
-SERVER.bind(ADDR)
+def signal_handler(signal, frame):
+	print("exiting")
+	state = OVER
+	for i in players:
+		i.close()
+	SERVER.close()
+	sys.exit(0)
 
 if __name__ == "__main__":
+	signal.signal(signal.SIGINT, signal_handler)
+	
 	SERVER.listen(5)
 	print("In attesa di connessioni...")
 	ACCEPT_THREAD = Thread(target=accept_loop)
 	MAIN_THREAD = Thread(target=main_loop)
+	ACCEPT_THREAD.daemon = True
+	MAIN_THREAD.daemon = True
+	all_threads.append(ACCEPT_THREAD)
+	all_threads.append(MAIN_THREAD)
+
 	ACCEPT_THREAD.start()
 	MAIN_THREAD.start()
-	try:
-		MAIN_THREAD.join()
-	except KeyboardInterrupt:
-		pass
-	finally:
-		state = OVER
-		for i in players:
-			i.close()
-		SERVER.close()
+	
+	for t in all_threads:
+		t.join()
+
+	state = OVER
+	for i in players:
+		i.close()
+	SERVER.close()
