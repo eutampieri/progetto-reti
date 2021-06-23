@@ -25,7 +25,8 @@ def receive():
             elif msg["action"] == "scoreboard":
                 for i, x in enumerate(msg["board"]):
                     if x["is_me"]:
-                        tkt.messagebox.showinfo(title="CoolNetGame Scoreboard", "You're "+str(x["score"] + "th!"))
+                        tkt.messagebox.showinfo(
+                            title="CoolNetGame Scoreboard", message="You're "+str(x["score"] + "th!"))
             elif msg["action"] == "choose":
                 question.configure(text=msg["message"])
                 ans0["text"] = msg["options"][0][1]
