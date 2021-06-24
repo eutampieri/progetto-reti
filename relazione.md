@@ -44,10 +44,18 @@ Alla fine del gioco, verra mandata una scoreboard al giocatore e verrà disconne
 
 In questo repo sono presenti due client:
 
- - Uno, realizzato in Python tramite la libreria `tkinter`
- - Un altro, realizzato in HTML5+JS+CSS3, che invece sfrutta i Websocket.
+ - Uno, realizzato in Python tramite la libreria `tkinter`, eseguibile tramite `python3 client.py`
+ - Un altro, realizzato in HTML5+JS+CSS3, che invece sfrutta i WebSocket.
 
-Per la webapp è stato realizzato un proxy che si connette al server tramite una connessione TCP ed espone i messaggi JSON su un websocket sulla porta 8080.
+Per la webapp è stato realizzato un proxy che si connette al server tramite una connessione TCP ed espone i messaggi JSON su un WebSocket sulla porta 8080.
+
+Pertanto, per utilizzare la webapp è necessario avere installata la [toolchain Rust](https://www.rust-lang.org/tools/install),
+necessaria a compilare il proxy WebSocket. Per compilarla ed eseguirla, lanciare dalla directory `proxy`
+il comando `cargo run --release 127.0.0.1 53000`, assumendo che il server sia in esecuzione sulla stessa
+macchina sulla porta TCP 53000.
+
+Il client, che può essere eseguito su qualsiasi HTTP server, chiederà all'avvio l'indirizzo del WebSocket. Quello di default
+è coerente con i passi indicati in questa relazione, pertanto non dovrebbe essere modificato.
 
 ### Comandi disponibili
 - Subito dopo la connessione
@@ -77,7 +85,7 @@ Il server di gioco, oltre al thread principale, utilizza: un thread per accettar
 
 Io mi sono occupato di realizzare il client Tkinter, un semplice client HTTPS
 (utilizzato per scaricare il dataset), la modalità di invio dei messaggi tramite
-JSON, la webapp ed il proxy per Websockets.
+JSON, la webapp ed il proxy per WebSocket.
 
 Ho trovato interessante soprattutto lo sviluppo del client HTTPS, situato in `server/http_client.py`,
 perché, nonostante sia semplice inviare una richiesta `GET` ad un server HTTP, mi sono imbattuto in
@@ -90,7 +98,7 @@ diversi problemi:
   con `Connection: Close` si riuscisse ad ovviare al problema), perciò inizialmente effettuavo il parsing
   di `Content-Length`, ma poi ho trovato più semplice controllare che non venissero inviati nuovi bytes.
 
-Altra cosa per me proficua è stato l'utilizzo dei Websockets, che non avevo mai avuto occasione di usare.
+Altra cosa per me proficua è stato l'utilizzo dei WebSocket, che non avevo mai avuto occasione di usare.
 
 ## Librerie utilizzate
 - socket
