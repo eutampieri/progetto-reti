@@ -12,13 +12,15 @@
         crossorigin="anonymous" referrerpolicy="no-referrer" />
 </head>
 
-<body>
-
+<body onload="Game.game()">
+    <div class="container">
+        <h1 class="display-1">CoolNetGame</h1>
+        <button type="button" class="btn btn-primary" onclick="Game.ready(this)">Ready!</button>
+        <div id="choose_view" class="d-none">
+            <h4 id="choose_title"></h4>
+            <div id="choices" class="d-flex justify-content-evenly"></div>
+        </div>
+    </div>
 </body>
-<h1>CoolNetGame</h1>
-<div id="choose_view" class="d-none">
-    <h2 id="choose_title"></h2>
-    <div id="choices"></div>
-</div>
 
 </html>
