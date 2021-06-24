@@ -35,6 +35,7 @@ var Game = {
                     case "quit":
                         document.getElementById("choose_view").classList.add("d-none");
                         alert("You were kicked from the game :(\n" + message["reason"]);
+                        this.ws.close()
                         break;
                     default:
                         console.log(event.data)
@@ -54,7 +55,7 @@ var Game = {
     },
 
     changeName: function (name) {
-        this.ws.send("setname" + name.replace(/\s/g, ""));
+        this.ws.send("setname " + name.replace(/\s/g, ""));
     },
     game: function () {
         this.connect(prompt("Enter server", "ws://127.0.0.1:8080"), prompt("Enter yout name"));
