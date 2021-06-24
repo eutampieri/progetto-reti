@@ -67,6 +67,43 @@ Il client, che può essere eseguito su qualsiasi HTTP server, chiederà all'avvi
 	- quit: abbandona la partita
 	- setname _newname_: cambia nome
 
+### Documentazione messaggi JSON
+
+Esistono quattro tipi di messaggi:
+1. `send_message`, utilizzato per inviare notifiche al client
+   ```json
+   {"action": "send_message", "message": "the message to be displayed"}
+   ```
+1. `quit`, per segnalare al client che deve chiudere il socket e terminare l'esecuzione
+   ```json
+   {"action": "quit", "reason": "The game has ended"}
+   ```
+1. `choose`, per chiedere al client di scegliere fra più opzioni
+   ```json
+   {
+	   "action": "choose",
+	   "message": "prompt the user to choose a message",
+	   "options": [ // An array of options
+		   [] // An option. The first element is the payload to send to the server,
+		      // while the second element is the text to show to the user, i.e.
+			  // the question
+	   ]
+   }
+   ```
+1. `scoreboard`, per chiedere al client di mostrare la classifica
+   ```json
+   {
+	   "action": "scoreboard",
+	   "board": [ // An entry for each player
+		   {
+			   "name": "Alice",
+			   "score": 3,
+			   "is_me": true // Wether or not the current entry represent the score of the player using the connected client
+		   }
+	   ]
+   }
+   ```
+
 ## Dettagli implementativi
 La scelta delle domande viene effettuata casualmente utilizzando [raw.githubusercontent.com/deepmind/AQuA/master/test.json](questo dataset)
 che viene scaricato tramite http quando viene lanciato il server.
