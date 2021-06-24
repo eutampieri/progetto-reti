@@ -136,8 +136,8 @@ diversi problemi:
   `Host`
 - Il server di GitHub richiede l'utilizzo di HTTPS, così ho avuto modo di approfondire la creazione di
   wrapped sockets per poter utilizzare SSL
-- Il server mantiene la connessione aperta dopo aver finito di inviare il file (bisognerebbe vedere se
-  con `Connection: Close` si riuscisse ad ovviare al problema), perciò inizialmente effettuavo il parsing
+- Il server mantiene la connessione aperta dopo aver finito di inviare il file (neanche inviando
+  `Connection: Close`), perciò inizialmente effettuavo il parsing
   di `Content-Length`, ma poi ho trovato più semplice controllare che non venissero inviati nuovi bytes.
 
 Altra cosa per me proficua è stato l'utilizzo dei WebSocket, che non avevo mai avuto occasione di usare.

@@ -10,7 +10,7 @@ def https_get(host, path, port=443):
     client_socket = ssl.wrap_socket(raw_socket)
     client_socket.connect((host, port))
     client_socket.send(
-        bytes("GET %s HTTP/1.1\r\nHost: %s\r\n\r\n" % (path, host), "utf8"))
+        bytes("GET %s HTTP/1.1\r\nHost: %s\r\nConnection: close\r\n\r\n" % (path, host), "utf8"))
     msg = ""
     while True:
         try:
