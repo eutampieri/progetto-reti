@@ -10,42 +10,48 @@ June 2021
 Il progetto consinte nel realizzare un programma con il linguaggio Python che permetta di giocare a un chat game sulla rete.
 
 ## Descrizione
-Sebbene il gioco sia perfettamente utilizzabile con il comando telnet,
 
-Abbiamo deciso di aggiungere anche un api in modo da poter facilmente costruire client personalizzati come client.py.
+Il gioco prevede di inviare agli utenti connessi delle domande. Rispondendo correttamente si guadagnano punti, altrimenti se ne perdono.
 
-Sono quindi presenti nella repo 2 programmi utilizzabili:
-- server/server.py
-- client.py
+Riteniamo la compatibilità una caratteristica importante, per questo motivo abbiamo deciso di implementare sia un'interfaccia testuale, utilizzabile da un'ampia gamma di dispositivi ad es. utilizzando il comando `telnet` o `nc`, che l'invio di messaggi ai client in formato JSON, attivabile inviando `api` entro 500 ms dalla connessione, particolarmente adatta se si vogliono sviluppare dei client grafici.
 
-entrambi eseguibili con python3.
+### Server
 
-Il server non e' implementato in un singolo file, ma in piu file tutti dentro la cartella server.
+Il server non è implementato in un singolo file, ma in piu file tutti dentro la cartella server.
 
-Una volta eseguito il server rimarra' in attesa di connessioni sulla porta 53000.
+Una volta lanciato il server, eseguendo `python3 server/server.py` rimarrà in attesa di connessioni sulla porta TCP 53000, effettuando un binding su tutte le interfacce disponibili.
 
 Quando un client si connette, gli viene assegnato un nome e viene aggiunto alla lista dei giocatori.
 
-Appena connesso il client ricevera' una guida su come operare.
+Appena connesso il client riceverà una guida su come operare.
 
-Quando piu della meta dei client connessi hanno inviato il comando 'ready' per dichiarare che sono pronti ad iniziare il gioco,
-parte il gioco e il server smette di accettare nuove connessioni.
+Quando piu della meta dei client connessi hanno inviato il comando `ready` per dichiarare che sono pronti ad iniziare il gioco,
+il gioco ha inizio e il server smette di accettare nuove connessioni.
 
-Nella durata di 60 minuti viene effettuato il gioco.
+Nella durata di 5 minuti viene effettuato il gioco.
 
 Il gioco dura tanti turni quanto un giocatore riesce ad andare avanti entro il tempo limite.
 
-Ogni turno viene posta una scelta ceca al giocatore con 3 possibilita' in cui se sbaglia viene eliminato e disconnesso dopo aver ricevuto la classifica corrente.
+Ogni turno viene posta una scelta ceca al giocatore con 3 possibilità in cui se sbaglia viene eliminato e disconnesso dopo aver ricevuto la classifica corrente.
 
-Se invece non sbaglia, gli viene posta una domanda con 3 possibilita', se risponde correttamente gli viene assegnato +1 punto, altrimenti -1 punto.
+Se invece non sbaglia, gli viene posta una domanda con 3 possibilità, se risponde correttamente gli viene assegnato +1 punto, altrimenti -1 punto.
 
-Se il tempo limite non e' ancora terminato, il giocatore passa al prossimo turno.
+Se il tempo limite non è ancora terminato, il giocatore passa al prossimo turno.
 
-Alla fine del gioco, verra mandata una scoreboard al giocatore e verra' disconnesso dal server, che finira' l'esecuzione.
+Alla fine del gioco, verra mandata una scoreboard al giocatore e verrà disconnesso dal server, che finirà l'esecuzione.
+
+### Client
+
+In questo repo sono presenti due client:
+
+ - Uno, realizzato in Python tramite la libreria `tkinter`
+ - Un altro, realizzato in HTML5+JS+CSS3, che invece sfrutta i Websocket.
+
+Per la webapp è stato realizzato un proxy che si connette al server tramite una connessione TCP ed espone i messaggi JSON su un websocket sulla porta 8080.
 
 ### Comandi disponibili
 - Subito dopo la connessione
-	- api: abilita la modalita' api
+	- api: abilita la modalità api
 - In fase di waiting
 	- ready: dichiara di essere pronto a giocare
 - In fase di gioco
@@ -57,15 +63,34 @@ Alla fine del gioco, verra mandata una scoreboard al giocatore e verra' disconne
 La scelta delle domande viene effettuata casualmente utilizzando [raw.githubusercontent.com/deepmind/AQuA/master/test.json](questo dataset)
 che viene scaricato tramite http quando viene lanciato il server.
 
-La comunicazione server-client puo essere effettuata in 2 modalita': normale e api.
+La comunicazione server-client puo essere effettuata in 2 modalità: normale e api.
 
-La modalita' api codifica i messaggi in json, mentre la modalita' normale serve per i client testuali.
+La modalità api codifica i messaggi in json, mentre la modalità normale serve per i client testuali.
 
-La modalita' api viene attivata se il comando 'api' viene inviato al server entro 0.5s dalla connessione del client.
+La modalità api viene attivata se il comando 'api' viene inviato al server entro 0.5s dalla connessione del client.
 
-La comunicazione client-server essendo molto semplice avviene sempre in forma testuale.
+La comunicazione client-server, essendo molto semplice, avviene sempre in forma testuale.
 
-Il server di gioco oltre al thread principale, utilizza: un thread per accettare le connessioni, un thread per gestire il gioco e un thread per ogni client.
+Il server di gioco, oltre al thread principale, utilizza: un thread per accettare le connessioni, un thread per gestire il gioco e un thread per ogni client.
+
+### Tampieri
+
+Io mi sono occupato di realizzare il client Tkinter, un semplice client HTTPS
+(utilizzato per scaricare il dataset), la modalità di invio dei messaggi tramite
+JSON, la webapp ed il proxy per Websockets.
+
+Ho trovato interessante soprattutto lo sviluppo del client HTTPS, situato in `server/http_client.py`,
+perché, nonostante sia semplice inviare una richiesta `GET` ad un server HTTP, mi sono imbattuto in
+diversi problemi:
+- Il server di GitHub, su cui è hostato il dataset, non supporta HTTP 1.0 e richiede l'invio dell'header
+  `Host`
+- Il server di GitHub richiede l'utilizzo di HTTPS, così ho avuto modo di approfondire la creazione di
+  wrapped sockets per poter utilizzare SSL
+- Il server mantiene la connessione aperta dopo aver finito di inviare il file (bisognerebbe vedere se
+  con `Connection: Close` si riuscisse ad ovviare al problema), perciò inizialmente effettuavo il parsing
+  di `Content-Length`, ma poi ho trovato più semplice controllare che non venissero inviati nuovi bytes.
+
+Altra cosa per me proficua è stato l'utilizzo dei Websockets, che non avevo mai avuto occasione di usare.
 
 ## Librerie utilizzate
 - socket
@@ -78,5 +103,5 @@ Il server di gioco oltre al thread principale, utilizza: un thread per accettare
 - ssl
 - tkinter (solo per il client con GUI in python)
 
-Il sorgente di questo progetto e' presente al seguente link https://github.com/eutampieri/progetto-reti
+Il sorgente di questo progetto è presente al seguente link https://github.com/eutampieri/progetto-reti
 

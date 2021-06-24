@@ -16,7 +16,7 @@ To answer to the questions type either '0', '1' or '2'.
 To change username, type 'setname <new_username>' note that no spaces are allowed in usernames.
 To quit the game, type 'quit'.
 
-The game will last for 60s, during which you should try to answer to as many questions correctly.
+The game will last for 300s, during which you should try to answer to as many questions correctly.
 
 Before every question you will be asked to pick a number between 0 and 2,
 if you pick the wrong one, the game will end for you.
@@ -36,7 +36,7 @@ ADDR = (HOST, PORT)
 SERVER = socket(AF_INET, SOCK_STREAM)
 SERVER.bind(ADDR)
 
-GAME_DURATION = 60
+GAME_DURATION = 300
 WAITING = 0
 IN_GAME = 1
 OVER = 2
