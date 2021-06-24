@@ -149,6 +149,11 @@ Altra cosa per me proficua è stato l'utilizzo dei WebSocket, che non avevo mai 
 - random
 - ssl
 - tkinter (solo per il client con GUI in python)
+- [Bootstrap 5.0.1](https://getbootsrap.com) (solo per la webapp)
+- [websocket](https://crates.io/crates/websocket) (solo per il proxy WebSocket)
+- [std::net](https://doc.rust-lang.org/std/net/) (solo per il proxy WebSocket)
+- [std::io](https://doc.rust-lang.org/std/io/) (solo per il proxy WebSocket)
+- [std::thread](https://doc.rust-lang.org/std/thread/) (solo per il proxy WebSocket)
 
-Il sorgente di questo progetto è presente al seguente link https://github.com/eutampieri/progetto-reti
+Il sorgente di questo progetto è presente al seguente link: https://github.com/eutampieri/progetto-reti
 
