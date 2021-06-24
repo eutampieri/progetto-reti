@@ -1,7 +1,4 @@
-use std::{
-    borrow::BorrowMut,
-    io::{Read, Write},
-};
+use std::io::{Read, Write};
 use websocket::OwnedMessage;
 
 fn main() {
