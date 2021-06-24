@@ -107,7 +107,7 @@ Esistono quattro tipi di messaggi:
    ```
 
 ## Dettagli implementativi
-La scelta delle domande viene effettuata casualmente utilizzando [raw.githubusercontent.com/deepmind/AQuA/master/test.json](questo dataset)
+La scelta delle domande viene effettuata casualmente utilizzando [questo dataset](raw.githubusercontent.com/deepmind/AQuA/master/test.json)
 che viene scaricato tramite http quando viene lanciato il server.
 
 La comunicazione server-client puo essere effettuata in 2 modalità: normale e api.
