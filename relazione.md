@@ -86,7 +86,7 @@ Esistono quattro tipi di messaggi:
 	   "options": [ // An array of options
 		   ["0", "4"], // An option. The first element is the payload to send to the server,
 		               // while the second element is the text to show to the user, i.e.
-			           // the question
+		               // the question
 		   ["1", "5"],
 		   ["2", "i"]
 	   ]
@@ -100,7 +100,7 @@ Esistono quattro tipi di messaggi:
 		   {
 			   "name": "Alice",
 			   "score": 3,
-			   "is_me": true // Wether or not the current entry represent the score of the player using the connected client
+			   "is_me": true // Whether or not the current entry represent the score of the player using the connected client
 		   }
 	   ]
    }
