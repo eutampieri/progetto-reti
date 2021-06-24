@@ -142,6 +142,15 @@ diversi problemi:
 
 Altra cosa per me proficua è stato l'utilizzo dei WebSocket, che non avevo mai avuto occasione di usare.
 
+### Chelli
+
+Io mi sono occupato di realizzare il corpo server e la logica di gioco.
+
+Un problema che ho incontrato e' stato quello di fare in modo che il server si chiudesse sempre in modo pulito, anche con ctrl-c,
+killando tutti i thread e chiudendo tutte le connessioni.
+
+La parte che ho trovato piu' interessante e' decidere insieme a Tampieri, i metodi di interazione fra server e client.
+
 ## Librerie utilizzate
 - socket
 - threading
