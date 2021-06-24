@@ -120,6 +120,9 @@ La comunicazione client-server, essendo molto semplice, avviene sempre in forma 
 
 Il server di gioco, oltre al thread principale, utilizza: un thread per accettare le connessioni, un thread per gestire il gioco e un thread per ogni client.
 
+Il proxy WebSocket utilizza due thread per ogni client connesso: uno per la gestione del WebSocket e l'invio dei messaggi
+dal WebSocket al socket TCP, l'altro per l'invio dei messaggi dal socket TCP al WebSocket.
+
 ### Tampieri
 
 Io mi sono occupato di realizzare il client Tkinter, un semplice client HTTPS
