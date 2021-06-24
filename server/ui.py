@@ -1,4 +1,10 @@
-from json import dumps
+import json
+from time import sleep
+
+def dumps(obj):
+    sleep(0.2)
+    return json.dumps(obj)
+
 
 """Returns a dict of functions that return the message"""
 
@@ -14,7 +20,7 @@ def get_messages(is_api):
     if is_api:
         return {
             "message": lambda x: dumps({"action": "send_message", "message": x}),
-            "quit": lambda x: dumps({"action": "quit", "reason": x}),
+            "quit": lambda x:  dumps({"action": "quit", "reason": x}),
             "choose": lambda x: dumps({"action": "choose", "message": x[0], "options": x[1]}),
             "scoreboard": lambda x: dumps({"action": "scoreboard", "board": [{"name": y.name, "score": y.score, "is_me": y.player_id == x[1].player_id} for y in x[0]]}),
         }
