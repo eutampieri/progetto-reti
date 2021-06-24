@@ -82,11 +82,13 @@ Esistono quattro tipi di messaggi:
    ```json
    {
 	   "action": "choose",
-	   "message": "prompt the user to choose a message",
+	   "message": "How much is 2+2?",
 	   "options": [ // An array of options
-		   [] // An option. The first element is the payload to send to the server,
-		      // while the second element is the text to show to the user, i.e.
-			  // the question
+		   ["0", "4"], // An option. The first element is the payload to send to the server,
+		               // while the second element is the text to show to the user, i.e.
+			           // the question
+		   ["1", "5"],
+		   ["2", "i"]
 	   ]
    }
    ```
