@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Game server"""
 
-from socket import AF_INET, socket, SOCK_STREAM
+from socket import AF_INET, socket, SOCK_STREAM, SOL_SOCKET, SO_REUSEADDR
 from threading import Thread
 from game import get_question, get_random_mapping
 from ui import get_messages
@@ -34,6 +34,7 @@ BUFSIZ = 1024
 ADDR = (HOST, PORT)
 
 SERVER = socket(AF_INET, SOCK_STREAM)
+SERVER.setsockopt(SOL_SOCKET, SO_REUSEADDR, 1)
 SERVER.bind(ADDR)
 
 GAME_DURATION = 300
@@ -65,15 +66,14 @@ class Player:
 			self.close("Some communication error occurred")
 	def close(self, msg):
 		global num_connected_clients
-		time.sleep(1)
-		if not self.to_close:
-			msgs = get_messages(self.is_api)
-			self.msg(msgs["scoreboard"]((players, self)))
-			self.msg(msgs["quit"](msg))
-			num_connected_clients -= 1
-			self.to_close = True
 		try:
-			self.client.close()
+			if not self.to_close:
+				self.to_close = True
+				msgs = get_messages(self.is_api)
+				self.msg(msgs["scoreboard"]((players, self)))
+				self.msg(msgs["quit"](msg))
+				num_connected_clients -= 1
+				self.client.close()
 		except:
 			return
 
@@ -104,14 +104,17 @@ def accept_loop():
 
 		# check if API
 		api = False
-		client.settimeout(0.5)
 		try:
+			client.settimeout(0.5)
 			msg = client.recv(BUFSIZ).decode("utf-8")
 			if msg.strip() == "api":
 				api = True
 		except:
 			pass
-		client.settimeout(GAME_DURATION)
+		try:
+			client.settimeout(GAME_DURATION)
+		except:
+			pass
 
 		player = Player(client, client_address, client_id, name, api)
 		players.append(player)
@@ -194,13 +197,13 @@ def handle_client(player):
 
 	msgs = get_messages(player.is_api)
 
-	while state == WAITING:
+	while state == WAITING and not player.to_close:
 		if player.is_ready:
 			player.msg(msgs["message"]("Waiting for game to start ({}/{} players ready)".format(num_ready_clients, num_connected_clients)))
 			time.sleep(2)
 		else:
-			player.client.settimeout(4)
 			try:
+				player.client.settimeout(4)
 				player.msg(msgs["message"]("type 'ready' to ready up! ({}/{} players ready)".format(num_ready_clients, num_connected_clients)))
 				msg = player.client.recv(BUFSIZ).decode("utf-8")
 				if msg.strip() == "ready":
@@ -209,7 +212,10 @@ def handle_client(player):
 					player.msg(msgs["message"]("Readyd up"))
 			except:
 				pass
-			player.client.settimeout(GAME_DURATION)
+			try:
+				player.client.settimeout(GAME_DURATION)
+			except:
+				pass
 
 	player.msg(msgs["message"]("Game started!"))
 	turn = 0
@@ -244,15 +250,18 @@ def broadcast(msg):
 	for utente in players:
 		utente.msg(msg)
 
-
-
 def signal_handler(signal, frame):
-	print("exiting")
-	state = OVER
-	for i in players:
-		i.close("The session was terminated by the server")
-	SERVER.close()
-	sys.exit(0)
+	try:
+		print("exiting")
+		state = OVER
+		for i in players:
+			i.close("The session was terminated by the server")
+		SERVER.close()
+	except:
+		print("something went wrong on exiting")
+		pass
+	finally:
+		sys.exit(0)
 
 if __name__ == "__main__":
 	signal.signal(signal.SIGINT, signal_handler)
