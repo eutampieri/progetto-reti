@@ -65,6 +65,7 @@ class Player:
 			self.close("Some communication error occurred")
 	def close(self, msg):
 		global num_connected_clients
+		time.sleep(1)
 		if not self.to_close:
 			msgs = get_messages(self.is_api)
 			self.msg(msgs["scoreboard"]((players, self)))

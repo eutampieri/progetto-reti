@@ -7,7 +7,7 @@ def get_scoreboard(x):
     points_names = [(y.score, "** " + y.name + " **" if y.player_id ==
                      x[1].player_id else y.name) for y in x[0]]
     points_names.sort()
-    return "Here's the current scoreboard:\n" + "\n".join([str(i+1) + "\t" + x[1] + " (" + str(x[0]) + " points)" for i, x in enumerate(points_names)])
+    return "Here's the current scoreboard:\n" + "\n".join([str(i+1) + "\t" + x[1] + " (" + str(x[0]) + " points)" for i, x in enumerate(reversed(points_names))])
 
 
 def get_messages(is_api):
